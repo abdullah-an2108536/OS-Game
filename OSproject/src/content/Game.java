@@ -1,6 +1,7 @@
 package content;
 
 import java.io.BufferedReader;
+
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
@@ -9,61 +10,67 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 
-public class Game extends Thread{
-	
+// Manages an active game, including game rules and dynamics.
+
+public class Game extends Thread {
+
 	Socket client;
+
 	public Game(Socket c) {
 		client = c;
 	}
-    public void run() {
-    	
-//    List<Integer> players = new ArrayList<>();
-//    List<Integer> points = new ArrayList<>();
-      List<Integer> guesses = new ArrayList<>();
-      
-      try {
-		PrintWriter output= new PrintWriter(client.getOutputStream(),true);
-		BufferedReader in = new BufferedReader(new InputStreamReader(client.getInputStream()));
-		
 
-          Scanner scanner = new Scanner(System.in); // to take guesses from the players
-          for (int i = 0; i < 4; i++) {
-              System.out.print("Player " + (i + 1) + " enter your guess: ");
-              int guess = scanner.nextInt();
-              guesses.add(guess);
-          }
+	public void run() {
 
-          // calculate the average and target
-          double sum = 0;
-          for (int guess : guesses) {
-              sum += guess;
-          }
-          double average = sum / guesses.size();
-          double target = (2.0 / 3.0) * average;
+//      List<Integer> players = new ArrayList<>();
+//      List<Integer> points = new ArrayList<>();
 
-          // list to maintain winners
-          List<Integer> winners = new ArrayList<>();
-          double minDifference = Double.MAX_VALUE;
-          for (int guess : guesses) {
-              double difference = Math.abs(target - guess);
-              if (difference < minDifference) {
-                  minDifference = difference;
-                  winners.clear();
-                  winners.add(guess);
-              } else if (difference == minDifference) {
-                  winners.add(guess);
-              }
-          }
-          scanner.close();
-          // list the winners who are close to 2/3 average...
-          System.out.println("The average is: " + average);
-          System.out.println("The target is: " + target);
-          System.out.println("The closest guesses to two-thirds of the average are: " + winners);
-          
-          output.println("The average is: " + average); // this sends the result back to the player
-      } 
-      catch (IOException e) {
-		e.printStackTrace();
+		List<Integer> guesses = new ArrayList<>();
+
+		try {
+			PrintWriter output = new PrintWriter(client.getOutputStream(), true);
+			BufferedReader in = new BufferedReader(new InputStreamReader(client.getInputStream()));
+
+			Scanner scanner = new Scanner(System.in); // to take guesses from the players
+			for (int i = 0; i < 4; i++) {
+				System.out.print("Player " + (i + 1) + " enter your guess: ");
+				int guess = scanner.nextInt();
+				guesses.add(guess);
+			}
+
+			// calculate the average and target
+			double sum = 0;
+			for (int guess : guesses) {
+				sum += guess;
+			}
+			double average = sum / guesses.size();
+			double target = (2.0 / 3.0) * average;
+
+			// list to maintain winners
+			List<Integer> winners = new ArrayList<>();
+
+			double minDifference = Double.MAX_VALUE;
+
+			for (int guess : guesses) {
+				double difference = Math.abs(target - guess);
+				if (difference < minDifference) {
+					minDifference = difference;
+					winners.clear();
+					winners.add(guess);
+				} else if (difference == minDifference) {
+					winners.add(guess);
+				}
+			}
+			scanner.close();
+
+			// list the winners who are close to 2/3 average...
+			System.out.println("The average is: " + average);
+			System.out.println("The target is: " + target);
+			System.out.println("The closest guesses to two-thirds of the average are: " + winners);
+
+			output.println("The average is: " + average); // this sends the result back to the player
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
-    }
 }
