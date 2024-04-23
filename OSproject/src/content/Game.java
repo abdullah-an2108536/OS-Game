@@ -15,6 +15,8 @@ import java.util.Scanner;
 public class Game extends Thread {
 
 	Socket client;
+	
+	private ArrayList<Player> players;
 
 	public Game(Socket c) {
 		client = c;
