@@ -1,26 +1,18 @@
 package content;
 
-public class Ticket {
+import java.io.Serializable;
 
-	private static int idCount = 0;
+public class Ticket implements Serializable {
+
+	private static final long serialVersionUID = 0;
+
 	private int id;
 	private String nickname;
 
-	public Ticket(String nickname) {
-
-		idCount++;
-
-		this.id = idCount + 1;
-		this.nickname = nickname;
-	}
-	
-	public Ticket(String nickname,int id) {
-
-
+	public Ticket(String nickname, int id) {
 		this.id = id;
 		this.nickname = nickname;
 	}
-
 
 	public int getId() {
 		return id;
@@ -31,6 +23,12 @@ public class Ticket {
 	}
 
 	public String getTicket() {
-		return nickname+" "+id;
+		return nickname + " " + id;
 	}
+
+	@Override
+	public String toString() {
+		return "Ticket [id=" + id + ", nickname=" + nickname + "]";
+	}
+
 }

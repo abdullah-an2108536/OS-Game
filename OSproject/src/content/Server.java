@@ -4,37 +4,34 @@ import java.io.*;
 import java.net.*;
 import java.util.*;
 
-// Handles incoming connections from clients, manages games, and maintains a leaderboard
-
 public class Server {
 
-	// Keep games, players, and tickets in ArrayLists
 	private ArrayList<Game> games;
 	private ArrayList<Player> players;
 	private ArrayList<Ticket> tickets = new ArrayList<>();
-
-	// store Leaderboard ("PlayerName",wins)
 	private Map<String, Integer> leaderboard;
 
-	PrintWriter to_client;
-	BufferedReader from_client;
+	private PrintWriter toClient;
+	private BufferedReader fromClient;
 
 	public Server() {
 		try {
+			loadTickets();
+			
+			System.out.println("Tickets available :" + tickets.size());
+			for (Ticket t : tickets) {
+				System.out.println(t.toString());
+			}
 
-			@SuppressWarnings("resource")
 			ServerSocket server = new ServerSocket(13337);
 			System.out.println("Server is up, waiting for Connections on port " + server.getLocalPort());
 
-			for (;;) {
+			while (true) {
 				Socket client = server.accept();
+				toClient = new PrintWriter(client.getOutputStream(), true);
+				fromClient = new BufferedReader(new InputStreamReader(client.getInputStream()));
 
-				to_client = new PrintWriter(client.getOutputStream(), true);
-				from_client = new BufferedReader(new InputStreamReader(client.getInputStream()));
-
-				// handle client differently based on if they are providing ticket or nickname
-
-				String request = from_client.readLine();
+				String request = fromClient.readLine();
 
 				if (request.startsWith("nickname")) {
 					handleNickname(client, request);
@@ -42,50 +39,51 @@ public class Server {
 					handleTicket(client, request);
 				}
 				handleGame(client);
-
 			}
-
-		} catch (Exception e) {
+		} catch (IOException e) {
 			System.out.println(e);
 		}
 	}
 
-	// If client provides a nickname, assign a new Ticket
-	private void handleNickname(Socket client, String nickname) {
-
+	private void handleNickname(Socket client, String nicknameRequest) {
 		try {
-			to_client = new PrintWriter(client.getOutputStream(), true);
-			from_client = new BufferedReader(new InputStreamReader(client.getInputStream()));
+			toClient = new PrintWriter(client.getOutputStream(), true);
+			fromClient = new BufferedReader(new InputStreamReader(client.getInputStream()));
 
-			// create new ticket based on client nickname
-			Ticket ticket = new Ticket(nickname.split(" ")[1]);
+			String nickname = nicknameRequest.split(" ")[1];
 
-			// add ticket to the tickets ArrayList
+			int maxId = 0;
+
+			for (Ticket ticket : tickets) {
+				int id = ticket.getId();
+				if (id > maxId) {
+					maxId = id;
+				}
+			}
+
+			Ticket ticket = new Ticket(nickname, maxId + 1);
 			tickets.add(ticket);
+			saveTickets();
 
-			to_client.println("Ticket issued: " + ticket.getTicket());
-		} catch (Exception e) {
+			toClient.println("Ticket issued: " + ticket.getTicket());
+
+		} catch (IOException e) {
 			e.printStackTrace();
 		}
 	}
 
-	// Client Provides previously issued Ticket
-	private void handleTicket(Socket client, String ticket) {
-
+	private void handleTicket(Socket client, String ticketRequest) {
 		try {
+			toClient = new PrintWriter(client.getOutputStream(), true);
+			fromClient = new BufferedReader(new InputStreamReader(client.getInputStream()));
 
-			to_client = new PrintWriter(client.getOutputStream(), true);
-			from_client = new BufferedReader(new InputStreamReader(client.getInputStream()));
-
-			ticket = ticket.split(" ")[1] + " " + ticket.split(" ")[2];
-			System.out.println(ticket);
-
-			Ticket existingTicket = findTicket(ticket);
+			String ticketData = ticketRequest.substring(7);
+			Ticket existingTicket = findTicket(ticketData);
 
 			if (existingTicket != null) {
-				to_client.println("Welcome back, " + existingTicket.getNickname());
+				toClient.println("Welcome back, " + existingTicket.getNickname());
 			} else {
-				to_client.println("Invalid ticket");
+				toClient.println("Invalid ticket");
 			}
 
 		} catch (IOException e) {
@@ -94,28 +92,24 @@ public class Server {
 	}
 
 	private void handleGame(Socket client) {
-
 		try {
-			to_client = new PrintWriter(client.getOutputStream(), true);
-			from_client = new BufferedReader(new InputStreamReader(client.getInputStream()));
+			toClient = new PrintWriter(client.getOutputStream(), true);
+			fromClient = new BufferedReader(new InputStreamReader(client.getInputStream()));
 
-			to_client.println("You are in the Game");
+			toClient.println("You are in the Game");
 
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-
 	}
 
 	private Ticket findTicket(String ticket) {
-
 		String[] parts = ticket.split(" ");
 
 		if (parts.length == 2) {
-			
 			String nickname = parts[0];
 			int id = Integer.parseInt(parts[1]);
-			
+
 			for (Ticket t : tickets) {
 				if (t.getNickname().equals(nickname) && t.getId() == id) {
 					return t;
@@ -123,7 +117,43 @@ public class Server {
 			}
 		}
 		return null;
+	}
 
+	private void loadTickets() {
+		try {
+			File file = new File("TicketsStorage.ser");
+			if (!file.exists()) {
+				System.out.println("hi");
+				boolean created = file.createNewFile();
+				if (!created) {
+					System.out.println("Failed to create 'tickets.ser' file.");
+					return; // Return if the file creation failed
+				}
+			}
+
+			try (ObjectInputStream objectInputStream = new ObjectInputStream(new FileInputStream(file))) {
+				while (true) {
+					try {
+						Ticket ticket = (Ticket) objectInputStream.readObject();
+						tickets.add(ticket);
+					} catch (EOFException e) {
+						break;
+					}
+				}
+			}
+		} catch (IOException | ClassNotFoundException e) {
+			System.out.println("Error loading tickets from file: " + e.getMessage());
+		}
+	}
+
+	private void saveTickets() {
+		try (ObjectOutputStream objectOutputStream = new ObjectOutputStream(new FileOutputStream("TicketsStorage.ser"))) {
+			for (Ticket ticket : tickets) {
+				objectOutputStream.writeObject(ticket);
+			}
+		} catch (IOException e) {
+			System.out.println("Error saving tickets to file: " + e.getMessage());
+		}
 	}
 
 	public static void main(String args[]) {
