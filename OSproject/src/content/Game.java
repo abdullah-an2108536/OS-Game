@@ -1,3 +1,4 @@
+
 package content;
 
 import java.io.BufferedReader;
@@ -12,7 +13,7 @@ import java.util.Scanner;
 
 // Manages an active game, including game rules and dynamics.
 
-public class Game extends Thread {
+public class Game /*extends Thread*/ {
 
 	Socket client;
 	
@@ -20,6 +21,10 @@ public class Game extends Thread {
 
 	public Game(Socket c) {
 		client = c;
+	}
+
+	public Game(int i, String string) {
+		// TODO Auto-generated constructor stub
 	}
 
 	public void run() {
@@ -74,5 +79,40 @@ public class Game extends Thread {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+	}
+
+	public ArrayList<Ticket> getPlayers() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	public void addPlayer(Player player) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	public void startGame() {
+		// TODO Auto-generated method stub
+		
+	}
+
+	public void playRound(Player player, int number) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	public int getId() {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+	public void removePlayer(Player player) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	public String getGameName() {
+		// TODO Auto-generated method stub
+		return null;
 	}
 }
