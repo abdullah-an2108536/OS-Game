@@ -1,118 +1,163 @@
-
 package content;
 
-import java.io.BufferedReader;
+import java.util.*;
 
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
-import java.net.Socket;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Scanner;
+public class Game {
+    private int id;
+    private String gameName;
 
-// Manages an active game, including game rules and dynamics.
+    private List<Player> playingPlayers;
+    private List<Player> waitingPlayers;
 
-public class Game /*extends Thread*/ {
+    private List<Player> roundWinners;
+    private List<Player> roundLosers;
 
-	Socket client;
-	
-	private ArrayList<Player> players;
+    int currentRound;
 
-	public Game(Socket c) {
-		client = c;
-	}
+    private boolean gameInProgress;
+    private boolean roundInProgress;
 
-	public Game(int i, String string) {
-		// TODO Auto-generated constructor stub
-	}
+    public int getId() {
+        return id;
+    }
 
-	public void run() {
+    public String getGameName() {
+        return gameName;
+    }
 
-//      List<Integer> players = new ArrayList<>();
-//      List<Integer> points = new ArrayList<>();
+    public List<Player> getPlayers() {
+        return playingPlayers;
+    }
 
-		List<Integer> guesses = new ArrayList<>();
+    public Game(int id, String gameName) {
+        this.id = id;
+        this.gameName = gameName;
 
-		try {
-			PrintWriter output = new PrintWriter(client.getOutputStream(), true);
-			BufferedReader in = new BufferedReader(new InputStreamReader(client.getInputStream()));
+        this.playingPlayers = new ArrayList<>();
+        this.waitingPlayers = new ArrayList<>();
 
-			Scanner scanner = new Scanner(System.in); // to take guesses from the players
-			for (int i = 0; i < 4; i++) {
-				System.out.print("Player " + (i + 1) + " enter your guess: ");
-				int guess = scanner.nextInt();
-				guesses.add(guess);
-			}
+        this.currentRound = 1;
+        this.gameInProgress = false;
+    }
 
-			// calculate the average and target
-			double sum = 0;
-			for (int guess : guesses) {
-				sum += guess;
-			}
-			double average = sum / guesses.size();
-			double target = (2.0 / 3.0) * average;
+    public void addPlayer(Player player) {
+        if (gameInProgress) {
+            waitingPlayers.add(player);
+        } else {
+            playingPlayers.add(player);
+            startGame();
+        }
 
-			// list to maintain winners
-			List<Integer> winners = new ArrayList<>();
+        System.out.println(player.getName() + "Added to waiting Players");
+    }
 
-			double minDifference = Double.MAX_VALUE;
+    public void startGame() {
+        gameInProgress = true;
 
-			for (int guess : guesses) {
-				double difference = Math.abs(target - guess);
-				if (difference < minDifference) {
-					minDifference = difference;
-					winners.clear();
-					winners.add(guess);
-				} else if (difference == minDifference) {
-					winners.add(guess);
-				}
-			}
-			scanner.close();
 
-			// list the winners who are close to 2/3 average...
-			System.out.println("The average is: " + average);
-			System.out.println("The target is: " + target);
-			System.out.println("The closest guesses to two-thirds of the average are: " + winners);
+        currentRound = 1;
+        playRound();
+    }
 
-			output.println("The average is: " + average); // this sends the result back to the player
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-	}
+    public void removePlayer(Player player) {
+        playingPlayers.remove(player);
+    }
 
-	public ArrayList<Ticket> getPlayers() {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    public void playRound() {
 
-	public void addPlayer(Player player) {
-		// TODO Auto-generated method stub
-		
-	}
+        int playerCount = playingPlayers.size();
+        if (playerCount == 0) {
+            System.out.println("No players in the game.");
+            return;
+        }
 
-	public void startGame() {
-		// TODO Auto-generated method stub
-		
-	}
+        // clear roundWinners ArrayList
+        roundWinners = new ArrayList<>();
+        roundLosers = new ArrayList<>();
+        
+        
+        
 
-	public void playRound(Player player, int number) {
-		// TODO Auto-generated method stub
-		
-	}
+        // Get the guess from each player
+        Map<Player, Integer> playerGuesses = new HashMap<>();
+        for (Player player : playingPlayers) {
+        	System.out.println("getting guess");
+            int playerGuess = player.getPlayerGuess();
+            playerGuesses.put(player, playerGuess);
+//			System.out.println(player.toString()+playerGuess);
+        }
 
-	public int getId() {
-		// TODO Auto-generated method stub
-		return 0;
-	}
+        // Calculate the target number (two-thirds of the average)
+        int sum = 22; // FOR TESTING PURPOSES WITH ONE PLAYER THE SUM is 22
+        for (int guess : playerGuesses.values()) {
+            sum += guess;
+//            System.out.println("sum + =" + sum);
+        }
 
-	public void removePlayer(Player player) {
-		// TODO Auto-generated method stub
-		
-	}
+        double average = (double) sum / playerCount;
+        int targetNumber = (int) (average * 0.6666);
 
-	public String getGameName() {
-		// TODO Auto-generated method stub
-		return null;
-	}
+        // Determine the outcome of the round
+        List<Player> winners = new ArrayList<>();
+        int minDifference = Integer.MAX_VALUE;
+
+        for (Map.Entry<Player, Integer> entry : playerGuesses.entrySet()) {
+
+            Player player = entry.getKey();
+            int playerGuess = entry.getValue();
+
+            int difference = Math.abs(playerGuess - targetNumber);
+
+            if (difference < minDifference) {
+                minDifference = difference;
+                winners.clear();
+                winners.add(player);
+            } else if (difference == minDifference) {
+                winners.add(player);
+            }
+
+            System.out.println("Player " + player.getNickname() + "'s points: " + player.getPoints());
+        }
+
+        // Add winners to the roundWinners list
+        roundWinners.addAll(winners);
+
+        // Print the round outcome
+        String roundOutput = "Round " + currentRound + ": ";
+        for (Map.Entry<Player, Integer> entry : playerGuesses.entrySet()) {
+            roundOutput += entry.getKey().getNickname() + "," + entry.getValue() + " ";
+        }
+        roundOutput += "Target: " + targetNumber + " ";
+        for (Map.Entry<Player, Integer> entry : playerGuesses.entrySet()) {
+            if (roundWinners.contains(entry.getKey())) {
+                roundOutput += "Win ";
+                entry.getKey().updatePoints(-1); // TESTING SO SINGLE USER WILL ALWAYS GET POINTS DEDUCTED SO THAT GAME ENDS AT SOME POINT
+            } else {
+                roundOutput += "Lose ";
+                entry.getKey().updatePoints(-1);
+            }
+        }
+
+        System.out.println(roundOutput);
+
+        for (Player player : playingPlayers) {
+        	System.out.println("printing round output");
+            player.toUser.println(roundOutput);
+        }
+
+        System.out.println();
+
+        // Game Over when no Players Left in the playingPlayers Array
+        if (playingPlayers.isEmpty()) {
+            System.out.println("Game over! No winners.");
+            for (Player player : playingPlayers) {
+                player.toUser.println("Game over! No winners.");
+            }
+
+            gameInProgress = false;
+        } else {
+            currentRound++;
+            playRound();
+        }
+    }
 }

@@ -6,9 +6,11 @@ import java.net.*;
 import java.util.*;
 
 public class Server {
+	
 	public ArrayList<Game> games = new ArrayList<>();
 	public ArrayList<Player> players = new ArrayList<>();
 	public ArrayList<Ticket> tickets = new ArrayList<>();
+	
 	public Map<String, Integer> leaderboard = new HashMap<>();
 
 	private PrintWriter toClient;
@@ -16,14 +18,16 @@ public class Server {
 
 	public Server() {
 		try {
+			
 			loadTickets();
 
+			// TEMPORARY (print tickets for testing purposes)
 			System.out.println("Tickets available :" + tickets.size());
 			for (Ticket t : tickets) {
 				System.out.println(t.toString());
 			}
 
-			// Create a default empty game
+			// Create default empty games
 			Game defaultGame = new Game(0, "Default Game");
 			Game defaultGame1 = new Game(1, "Test Game");
 
