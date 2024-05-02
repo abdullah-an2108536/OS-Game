@@ -99,7 +99,8 @@ public class Player extends Thread
             this.nickname = existingTicket.getNickname();
 
             this.ticket = existingTicket;
-        } else {toUser.println("Invalid ticket");}
+        }
+        else {toUser.println("Invalid ticket");}
     }
 
     private void handleGame()
@@ -200,8 +201,8 @@ public class Player extends Thread
         
         if(this.points<=0)
         {
-            toUser.println("You Lost");
-            game.getPlayers().remove(this);
+            toUser.println("You lost all your points...");
+            //game.getPlayers().remove(this);
         }
     }
 
@@ -229,6 +230,25 @@ public class Player extends Thread
 
     }
     
+    // Method to terminate player connection
+    public void terminateConnection()
+    {
+        try
+        {
+            // Close the PrintWriter
+            if (toUser != null) {toUser.close();}
+            
+            // Close the socket
+            if (clientSocket != null && !clientSocket.isClosed()) {clientSocket.close();}
+        }
+        catch (IOException e) {e.printStackTrace();}
+    }
+    
     // Method to send a message to the player
-    public void sendMessage(String message) {toUser.println(message);}
+    public void sendMessage(String message)
+    {
+    	message = message.replaceAll("\n", "\t");
+    	toUser.println(message);
+    	toUser.flush();
+    }
 }

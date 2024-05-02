@@ -78,15 +78,19 @@ public class Client
 
             while (true)
             {
-                String message = fromServer.readLine(); // ask for guess
+                String message = fromServer.readLine(); // receive round results or prompt for next action
                 if (message == null || message.equals("Game over! No winners."))
                 {
                     System.out.println("Game has ended.");
                     break;
                 }
                 System.out.println(message);
-                toServer.println(fromUser.readLine());
+                
+                // Check if the server is asking for user input
+                if (message.endsWith("Enter your guess (0-100):")) {toServer.println(fromUser.readLine());}
+                else {}
             }
+
 
         }
         catch (IOException e) {System.out.println("IO related error: " + e);}

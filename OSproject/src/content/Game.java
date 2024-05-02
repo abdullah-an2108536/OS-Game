@@ -15,6 +15,7 @@ public class Game {
 
     private static final int MAX_PLAYERS = 6;
     private static final int MIN_PLAYERS_TO_START = 2;
+    private static final int START_DELAY_SECONDS = 30;
 
     public int getId() {return id;}
 
@@ -40,40 +41,90 @@ public class Game {
         else
         {
             playingPlayers.add(player);
-            if (playingPlayers.size() >= MIN_PLAYERS_TO_START) {startGame();}
+            if (playingPlayers.size() >= MIN_PLAYERS_TO_START)
+            {
+                if (!starting)
+                {
+                    starting = true;
+                    Thread startCountdownThread = new Thread(() -> startCountdown());
+                    startCountdownThread.start();
+                }
+            }
         }
         System.out.println(player.getNickname() + " added to the game.");
     }
 
-    public void startGame()
+    private boolean starting = false;
+
+    private void startCountdown()
     {
-        if (playingPlayers.size() >= MIN_PLAYERS_TO_START)
+        try
         {
-            gameInProgress = true;
-            currentRound = 1;
-            playRound();
+            System.out.println("\n\nStarting the game in " + START_DELAY_SECONDS + " seconds...");
+            Thread.sleep((START_DELAY_SECONDS-10) * 1000);
+            System.out.println("Starting the game in 10 seconds...");
+            Thread.sleep(10000);
         }
-        else{System.out.println("Not enough players to start the game.");}
+        catch (InterruptedException e) {e.printStackTrace();}
+
+        synchronized (this)
+        {
+            if (playingPlayers.size() >= MIN_PLAYERS_TO_START)
+            {
+                gameInProgress = true;
+                currentRound = 1;
+                playRound();
+            }
+            else
+            {
+                System.out.println("Not enough players to start the game.");
+                starting = false;
+            }
+        }
+    }
+
+    public synchronized void joinDuringStart(Player player)
+    {
+        if (starting && canJoin && !gameInProgress)
+        {
+            playingPlayers.add(player);
+            System.out.println(player.getNickname() + " joined the game during starting phase.");
+        }
     }
 
     public synchronized void removePlayer(Player player)
     {
         playingPlayers.remove(player);
         waitingPlayers.remove(player);
+        
         if (playingPlayers.size() == 1)
         {
             Player winner = playingPlayers.get(0);
             System.out.println("Game over! " + winner.getNickname() + " wins!");
             gameInProgress = false;
         }
+        if (playingPlayers.size() < MIN_PLAYERS_TO_START) {starting = false;}
+    }
+
+    public void startGame()
+    {
+        if (playingPlayers.size() >= MIN_PLAYERS_TO_START)
+        {
+            if (!starting)
+            {
+                starting = true;
+                Thread startCountdownThread = new Thread(() -> startCountdown());
+                startCountdownThread.start();
+            }
+        }
+        else {System.out.println("Not enough players to start the game.");}
     }
 
     public void playRound()
-    {
+    {    	
         if (playingPlayers.size() < MIN_PLAYERS_TO_START)
         {
             System.out.println("Not enough players to start the round.");
-            // Check if there are enough players to continue the game
             if (playingPlayers.size() == 1)
             {
                 Player winner = playingPlayers.get(0);
@@ -83,34 +134,33 @@ public class Game {
             return;
         }
 
-        // clear roundWinners and roundLosers ArrayLists
         List<Player> roundWinners = new ArrayList<>();
         List<Player> roundLosers = new ArrayList<>();
 
-        // Get the guess from each player
         Map<Player, Integer> playerGuesses = new HashMap<>();
+        
         for (Player player : playingPlayers)
         {
-            System.out.println("Getting guess from " + player.getNickname());
+            System.out.println("\nGetting guess from " + player.getNickname());
             int playerGuess = player.getPlayerGuess();
             playerGuesses.put(player, playerGuess);
         }
 
-        // Calculate the target number (two-thirds of the average)
         int sum = 0;
         for (int guess : playerGuesses.values()) {sum += guess;}
-        
+
         double average = (double) sum / playingPlayers.size();
         int targetNumber = (int) (average * 0.6666);
 
-        // Determine the closest guess to the target number
         Player winner = null;
         int closestDifference = Integer.MAX_VALUE;
+        
         for (Map.Entry<Player, Integer> entry : playerGuesses.entrySet())
         {
             Player player = entry.getKey();
             int playerGuess = entry.getValue();
             int difference = Math.abs(playerGuess - targetNumber);
+            
             if (difference < closestDifference)
             {
                 closestDifference = difference;
@@ -118,10 +168,10 @@ public class Game {
             }
         }
 
-        // Set winner and update points for losers
         for (Map.Entry<Player, Integer> entry : playerGuesses.entrySet())
         {
             Player player = entry.getKey();
+            
             if (player == winner) {roundWinners.add(player);}
             else
             {
@@ -129,19 +179,44 @@ public class Game {
                 player.updatePoints(-1);
             }
         }
+        
+        Iterator<Player> iterator = playingPlayers.iterator();
+    	
+    	while (iterator.hasNext())
+    	{
+    	    Player p = iterator.next();
+    	    if (p.getPoints() <= 0)
+    	    {
+    	        iterator.remove();
+    	        waitingPlayers.add(p);
+    	        p.sendMessage("You are now a spectator [DO NOT INPUT]");
+    	    }
+    	}
 
-        // Print the round outcome
-        String roundOutput = "Round " + currentRound + ": Target number is " + targetNumber + ". ";
-        roundOutput += "Winner: " + winner.getNickname() + ". Losers: ";
-        
-        for (Player loser : roundLosers) {roundOutput += loser.getNickname() + ", ";}
-        
+        String roundOutput = "Round: " + currentRound + "\tTarget number was: " + targetNumber + ".\n";
+        roundOutput += "Winner: " + winner.getNickname() + "[" + winner.getPoints() + "].\nLosers: ";
+
+        for (Player loser : roundLosers) {roundOutput += loser.getNickname() + "[" + loser.getPoints() + "], ";}
+
         System.out.println(roundOutput);
+        
+        sendAnnouncement(playingPlayers, roundOutput);
+        sendAnnouncement(waitingPlayers, roundOutput);
 
-        // Check for game end condition
+//        if (playingPlayers.size() == 1)
+//        {
+//            Player winnerPlayer = playingPlayers.get(0);
+//            String message = "\n\nGame over!\t" + winnerPlayer.getNickname() + " wins!";
+//            System.out.println(message);
+//            
+//            sendAnnouncement(playingPlayers, message);
+//            sendAnnouncement(waitingPlayers, message);
+//            
+//            gameInProgress = false;
+//        }
+        
         checkEndGame();
 
-        // Start next round if game is still in progress
         if (gameInProgress)
         {
             currentRound++;
@@ -149,13 +224,39 @@ public class Game {
         }
     }
 
+    private boolean canJoin = true;
+
     private void checkEndGame()
     {
-        if (playingPlayers.size() == 1)
-        {
-            Player winner = playingPlayers.get(0);
-            System.out.println("Game over! " + winner.getNickname() + " wins!");
+    	
+    	if (playingPlayers.size() == 1)
+    	{
+            Player winnerPlayer = playingPlayers.get(0);
+            String message = "\n\nGame over!\t" + winnerPlayer.getNickname() + " wins!";
+            System.out.println(message);
+            
+            sendAnnouncement(playingPlayers, message);
+            sendAnnouncement(waitingPlayers, message);
+            
+            // Remove all players from the game
+            for (Player p : playingPlayers)
+            {
+            	p.sendMessage("The game has ended, goodbye!");
+            	p.terminateConnection();
+            }
+            playingPlayers.clear();
+            
+            for (Player p : waitingPlayers)
+            {
+            	p.sendMessage("The game has ended, goodbye!");
+            	p.terminateConnection();
+            }
+            waitingPlayers.clear();
+            
             gameInProgress = false;
-        }
+    	}
     }
+    
+    private void sendAnnouncement(List<Player> players, String message)
+    { for (Player p : players) {p.sendMessage(message);} }
 }
