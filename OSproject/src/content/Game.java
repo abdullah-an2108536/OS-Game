@@ -145,39 +145,73 @@ public class Game {
             int playerGuess = player.getPlayerGuess();
             playerGuesses.put(player, playerGuess);
         }
-
-        int sum = 0;
-        for (int guess : playerGuesses.values()) {sum += guess;}
-
-        double average = (double) sum / playingPlayers.size();
-        int targetNumber = (int) (average * 0.6666);
-
-        Player winner = null;
-        int closestDifference = Integer.MAX_VALUE;
         
-        for (Map.Entry<Player, Integer> entry : playerGuesses.entrySet())
-        {
-            Player player = entry.getKey();
-            int playerGuess = entry.getValue();
-            int difference = Math.abs(playerGuess - targetNumber);
-            
-            if (difference < closestDifference)
-            {
-                closestDifference = difference;
-                winner = player;
+        Player winner=playingPlayers.get(0);
+        int targetNumber=0;
+        //if the number of remaining players are 2, each has 1 point only
+        if (playingPlayers.size() == 2 && playingPlayers.get(0).getPoints() == 1 && playingPlayers.get(1).getPoints() == 1) {
+        	
+        	int player0guess=playerGuesses.get(playingPlayers.get(0));
+        	int player1guess=playerGuesses.get(playingPlayers.get(1));
+        	targetNumber=player0guess+player1guess;
+        	
+            //if the first player selects 0
+            if (player0guess == 0) {
+                // If the first player's guess is 0, the second player wins
+            	Player player0=playingPlayers.get(0);
+            	player0.updatePoints(-1);
+            	playingPlayers.set(0, player0);
+                roundLosers.add(player0);
+                winner=playingPlayers.get(1);
+                roundWinners.add(winner);
+                
+            } else if (player1guess == 0) {
+                // If the second player's guess is 0, the first player wins
+            	Player player1=playingPlayers.get(1);
+            	player1.updatePoints(-1);
+            	playingPlayers.set(1, player1);
+                roundLosers.add(player1);
+                winner=playingPlayers.get(0);
+                roundWinners.add(winner);
             }
         }
+        
+        else {
+        	
+        	int sum = 0;
+        	for (int guess : playerGuesses.values()) {sum += guess;}
 
-        for (Map.Entry<Player, Integer> entry : playerGuesses.entrySet())
-        {
-            Player player = entry.getKey();
-            
-            if (player == winner) {roundWinners.add(player);}
-            else
-            {
-                roundLosers.add(player);
-                player.updatePoints(-1);
-            }
+        	double average = (double) sum / playingPlayers.size();
+        	targetNumber = (int) (average * 0.6666);
+
+        	
+        	int closestDifference = Integer.MAX_VALUE;
+
+        	for (Map.Entry<Player, Integer> entry : playerGuesses.entrySet())
+        	{
+        		Player player = entry.getKey();
+        		int playerGuess = entry.getValue();
+        		int difference = Math.abs(playerGuess - targetNumber);
+
+        		if (difference < closestDifference)
+        		{
+        			closestDifference = difference;
+        			winner = player;
+        		}
+        	}
+
+        	for (Map.Entry<Player, Integer> entry : playerGuesses.entrySet())
+        	{
+        		Player player = entry.getKey();
+
+        		if (player == winner) {roundWinners.add(player);}
+        		else
+        		{
+        			player.updatePoints(-1);
+        			roundLosers.add(player);
+        			
+        		}
+        	}
         }
         
         Iterator<Player> iterator = playingPlayers.iterator();
