@@ -30,7 +30,9 @@ public class Client
                 System.out.println("Please provide your nickname: ");
                 String nickname = fromUser.readLine();
                 toServer.println("nickname " + nickname);
-                System.out.println(fromServer.readLine());
+                
+              System.out.println(fromServer.readLine()); 
+                
 
             }
             else if (userInput == 2)
@@ -40,12 +42,13 @@ public class Client
                 String ticket = fromUser.readLine();
                 toServer.println("ticket " + ticket);
 
-                String response = fromServer.readLine();
+                String response = fromServer.readLine(); 
                 if (response.equals("Invalid ticket"))
                 {
                     System.out.println("Invalid Ticket (Terminating Client Class)");
                     System.exit(0);
                 }
+              
                 System.out.println(response);
 
             }
@@ -59,6 +62,7 @@ public class Client
             System.out.println(fromServer.readLine());
 
             // Player chooses a game to Join or creates a new Game
+            
             System.out.println(fromServer.readLine());
             System.out.println(fromServer.readLine());
             System.out.println(fromServer.readLine());
@@ -79,12 +83,12 @@ public class Client
             while (true)
             {
                 String message = fromServer.readLine(); // receive round results or prompt for next action
+                System.out.println(message);
                 if (message == null || message.equals("Game over! No winners."))
                 {
                     System.out.println("Game has ended.");
                     break;
                 }
-                System.out.println(message);
                 
                 // Check if the server is asking for user input
                 if (message.endsWith("Enter your guess (0-100):")) {toServer.println(fromUser.readLine());}
@@ -95,4 +99,20 @@ public class Client
         }
         catch (IOException e) {System.out.println("IO related error: " + e);}
     }
+    
+    
+    //new change
+    public static void PingReply(BufferedReader fromUser,PrintWriter toServer, BufferedReader fromServer) {
+    	String reply;
+    	try {
+   
+    			System.out.println(fromServer.readLine());
+    			reply=fromUser.readLine();
+    			toServer.println(reply);
+    			toServer.flush();
+    	}
+       catch (IOException e) {
+        e.printStackTrace();
+}
+}
 }
