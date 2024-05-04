@@ -77,13 +77,15 @@ public class Player extends Thread
             int id = ticket.getId();
             if (id > maxId) {maxId = id;}
         }
-
-        Ticket ticket = new Ticket(nickname, maxId + 1);
-        server.tickets.add(ticket);
-        this.ticket = ticket;
-        server.saveTickets();
-
-        toUser.println("Ticket issued: " + ticket.getTicket());
+        
+     // Increment the maxId within synchronized block to ensure atomicity
+        synchronized (this) {
+            Ticket ticket = new Ticket(nickname, maxId + 1);
+            server.tickets.add(ticket);
+            this.ticket = ticket;
+            server.saveTickets();
+            toUser.println("Ticket issued: " + ticket.getTicket());
+        }
     }
 
     // Check if Ticket is Valid
@@ -141,14 +143,16 @@ public class Player extends Thread
         try
         {
             toUser.println("Enter the name for the new game:");
-            String newGameName = fromUser.readLine();
-            Game newGame = new Game(server.games.size() + 1, newGameName);
-            server.games.add(newGame);
-            game = newGame;
-            toUser.println("You created a new game with ID " + newGame.getId());
-            joinGame(game.getId());
-
-//          game.addPlayer(this);
+            String newGameName = fromUser.readLine();   
+            synchronized (server.games) {
+                // Increment the game ID based on the size of the games list
+                int gameId = server.games.size() + 1;
+                Game newGame = new Game(gameId, newGameName);
+                server.games.add(newGame);
+                game = newGame;
+                toUser.println("You created a new game with ID " + newGame.getId());
+                joinGame(game.getId());
+            }
         }
         catch (IOException e)
         {e.printStackTrace();}
