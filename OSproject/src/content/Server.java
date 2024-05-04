@@ -1,4 +1,5 @@
 
+
 package content;
 
 import java.io.*;
@@ -12,13 +13,9 @@ public class Server
 	public ArrayList<Player> players = new ArrayList<>();
 	public ArrayList<Ticket> tickets = new ArrayList<>();
 	
-	private Timer pingTimer; //new change
-    private static final int PING_TIME= 6000; // //new change
+	public Leaderboard leaderboard;
 
-	
-	public Map<String, Integer> leaderboard = new HashMap<>();
-
-	//private PrintWriter toClient;
+	private PrintWriter toClient;
 	private BufferedReader fromClient;
 
 	public Server()
@@ -27,14 +24,18 @@ public class Server
 		{
 			
 			loadTickets();
+			leaderboard = Leaderboard.loadLeaderboard("LeaderboardStorage.ser");
+			leaderboard.checkAndUpdateLeaderboard(tickets);
 
 			// TEMPORARY (print tickets for testing purposes)
 			System.out.println("Tickets available :" + tickets.size());
 			for (Ticket t : tickets) {System.out.println(t.toString());}
+			System.out.println(leaderboard.toString());
+			
 
 			// Create default empty games
-			Game defaultGame = new Game(0, "Default Game");
-			Game defaultGame1 = new Game(1, "Test Game");
+			Game defaultGame = new Game(0, "Default Game", leaderboard);
+			Game defaultGame1 = new Game(1, "Test Game", leaderboard);
 
 			games.add(defaultGame);
 			games.add(defaultGame1);
@@ -42,64 +43,27 @@ public class Server
 			ServerSocket server = new ServerSocket(13337);
 			System.out.println("Server is up, waiting for Connections on port " + server.getLocalPort());
 
-			 pingTimer = new Timer(); //new change
-	         pingTimer.schedule(new PingTask(), 1000, PING_TIME); //new change
-	         
 			while (true)
 			{
 				Socket client = server.accept();
-				
 
 				// Create a new Player Thread
 				Player player = new Player(client, this);
+				//player.sendMessage(leaderboard.toString2());
+				
+				try {
+					Thread.sleep(5000);
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				
 				players.add(player);
 				player.start();
-				
-				Thread clientThread = new Thread(() -> handleClient(client,player)); //new change
-                clientThread.start(); //new change
 			}
 		}
 		catch (IOException e) {System.out.println(e);}
 	}
-	
-	//new change
-	 private void handleClient(Socket client,Player player) {
-	        // Implementation to handle client connections
-		 try {
-		        fromClient=new BufferedReader(new InputStreamReader(client.getInputStream()));
-		        
-		        
-		        //toClient = new PrintWriter(client.getOutputStream(), true); //Do we need this? //new change
-		        
-		 
-		        String feed;
-		        do {
-		          feed = fromClient.readLine();
-		          if (feed.equals("ping")) {
-		        	System.out.println(player.getName()+" is still present !");
-		            }
-		        } while (feed != null);
-		        player.terminateConnection();
-		        players.remove(player);
-		        
-		      } catch (IOException e) {
-		        e.printStackTrace();
-		      }
-		    }
-		 
-	 
-	//new change
-	 private class PingTask extends TimerTask {
-	        @Override
-	        public void run() {
-	            // Send "ping" messages to players in the waitingPlayers list
-	            for (Player player : players) {
-	            	
-	                player.sendMessage("Type ping if you are still there");
-	            }
-	        }
-	    }
-	 
 
 	// Check if the ticket is present in the tickets ArrayList
 	public Ticket findTicket(String ticket)
@@ -127,7 +91,7 @@ public class Server
 			File file = new File("TicketsStorage.ser");
 			if (!file.exists())
 			{
-				System.out.println("hi");
+				System.out.println("Tickets file does not exist!");
 				boolean created = file.createNewFile();
 				if (!created)
 				{
@@ -161,6 +125,59 @@ public class Server
 		}
 		catch (IOException e) {System.out.println("Error saving tickets to file: " + e.getMessage());}
 	}
+	
+	
+	// Load Leaderboard stored in LeaderboardStorage.ser
+//	public void loadLeaderboard() {
+//	    try {
+//	        File file = new File("LeaderboardStorage.ser");
+//	        if (file.exists()) {
+//	            try (ObjectInputStream objectInputStream = new ObjectInputStream(new FileInputStream(file))) {
+//	                leaderboard = (Map<String, Integer>) objectInputStream.readObject();
+//	            }
+//	        } else {
+//	            System.out.println("Leaderboard file not found. Creating a new leaderboard.");
+//	            // Initialize leaderboard from tickets if it's empty
+//	            if (leaderboard.isEmpty()) {
+//	                initializeLeaderboardFromTickets();
+//	                saveLeaderboard(); // Save the initialized leaderboard
+//	            }
+//	        }
+//	    } catch (IOException | ClassNotFoundException e) {
+//	        System.out.println("Error loading leaderboard from file: " + e.getMessage());
+//	    }
+//	}
+//
+//	// Initialize leaderboard from tickets
+//    private void initializeLeaderboardFromTickets() {
+//        for (Ticket ticket : tickets) {
+//            String key = ticket.getNickname() + "_" + ticket.getId();
+//            if (!leaderboard.containsKey(key)) {
+//                leaderboard.put(key, 0);
+//            }
+//        }
+//        leaderboard.saveLeaderboard("LeaderboardStorage.ser");
+//    }
+
+    
+    
+    // Save Leaderboard stored in LeaderboardStorage.ser
+//    public void saveLeaderboard() {
+//        try (ObjectOutputStream objectOutputStream = new ObjectOutputStream(new FileOutputStream("LeaderboardStorage.ser"))) {
+//            objectOutputStream.writeObject(leaderboard);
+//        } catch (IOException e) {
+//            System.out.println("Error saving leaderboard to file: " + e.getMessage());
+//        }
+//    }
+//
+//    // Print the leaderboard
+//    public void printLeaderboard() {
+//        System.out.println("Leaderboard:");
+//        for (Map.Entry<String, Integer> entry : leaderboard.entrySet()) {
+//            System.out.println(entry.getKey() + ": " + entry.getValue() + " wins");
+//        }
+//    }
+	
 
 	public static void main(String args[]) {new Server();}
 }

@@ -20,6 +20,8 @@ public class Ticket implements Serializable
 	public int getId() {return id;}
 
 	public String getNickname() {return nickname;}
+	
+	public int getID() {return this.id;}
 
 	public String getTicket() {return nickname + " " + id;}
 

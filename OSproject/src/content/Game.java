@@ -12,6 +12,7 @@ public class Game {
     int currentRound;
 
     private boolean gameInProgress;
+    private Leaderboard leaderboard;
 
     private static final int MAX_PLAYERS = 6;
     private static final int MIN_PLAYERS_TO_START = 2;
@@ -23,10 +24,11 @@ public class Game {
 
     public List<Player> getPlayers() {return playingPlayers;}
 
-    public Game(int id, String gameName)
+    public Game(int id, String gameName, Leaderboard leaderboard)
     {
         this.id = id;
         this.gameName = gameName;
+        this.leaderboard = leaderboard;
 
         this.playingPlayers = new ArrayList<>();
         this.waitingPlayers = new ArrayList<>();
@@ -266,6 +268,7 @@ public class Game {
     	if (playingPlayers.size() == 1)
     	{
             Player winnerPlayer = playingPlayers.get(0);
+            leaderboard.incrementWins(winnerPlayer.getNickname(), winnerPlayer.getID());
             String message = "\n\nGame over!\t" + winnerPlayer.getNickname() + " wins!";
             System.out.println(message);
             

@@ -18,6 +18,7 @@ public class Player extends Thread
 
     // Ticket for this player
     private Ticket ticket;
+    private Leaderboard leaderboard;
 
     private Game game;
     
@@ -29,11 +30,14 @@ public class Player extends Thread
 
         this.clientSocket = clientSocket;
         this.server = server;
+        
+        this.leaderboard = Leaderboard.loadLeaderboard("LeaderboardStorage.ser");
 
         try
         {
             toUser = new PrintWriter( clientSocket.getOutputStream(), true );
             fromUser = new BufferedReader( new InputStreamReader(clientSocket.getInputStream()) );
+            toUser.println(leaderboard.toString2());
         }
         catch (Exception e) {e.printStackTrace();}
     }
@@ -42,6 +46,7 @@ public class Player extends Thread
     {
         try
         {
+        	
             String request = fromUser.readLine();
 
             // New Client
@@ -107,6 +112,8 @@ public class Player extends Thread
 
     private void handleGame()
     {
+    	//toUser.println(leaderboard.toString());
+    	
 
         // Display Available Games to the Client
         toUser.println("Available games:");
@@ -147,7 +154,7 @@ public class Player extends Thread
             synchronized (server.games) {
                 // Increment the game ID based on the size of the games list
                 int gameId = server.games.size() + 1;
-                Game newGame = new Game(gameId, newGameName);
+                Game newGame = new Game(gameId, newGameName, leaderboard);
                 server.games.add(newGame);
                 game = newGame;
                 toUser.println("You created a new game with ID " + newGame.getId());
@@ -211,6 +218,8 @@ public class Player extends Thread
     }
 
     public String getNickname() {return nickname;}
+    
+    public int getID() {return ticket.getID();}
 
     public int getPoints() {return points;}
 
@@ -251,8 +260,14 @@ public class Player extends Thread
     // Method to send a message to the player
     public void sendMessage(String message)
     {
-    	message = message.replaceAll("\n", "\t");
-    	toUser.println(message);
     	toUser.flush();
+    	toUser.println(message);
+    }
+    
+    // Method to send the leaderboard to the player
+    public void sendLeaderboard() {
+        if (server != null && server.leaderboard != null) {
+            toUser.println(server.leaderboard.toString());
+        }
     }
 }
