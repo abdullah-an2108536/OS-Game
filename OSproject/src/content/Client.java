@@ -14,7 +14,18 @@ public class Client
     {
         try
         {
-            Socket server = new Socket("localhost", 13337);
+        	
+        	if (args.length != 2) {
+                System.out.println("Usage: java Client <server-ip> <port>");
+                return;
+            }
+
+            String serverIP = args[0];
+            int port = Integer.parseInt(args[1]);
+
+            // change run configuration in Eclipse to add arguments
+            Socket server = new Socket(serverIP, port);
+                
 
             PrintWriter toServer = new PrintWriter(server.getOutputStream(), true);
             BufferedReader fromUser = new BufferedReader(new InputStreamReader(System.in));
