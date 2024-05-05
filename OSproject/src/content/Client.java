@@ -155,18 +155,4 @@ public class Client
         }
         catch (IOException e) {System.out.println("IO related error: " + e);}
     }
-    
-    public static void PingReply(BufferedReader fromUser,PrintWriter toServer, BufferedReader fromServer) {
-    	String reply;
-    	try {
-   
-    			System.out.println(fromServer.readLine());
-    			reply=fromUser.readLine();
-    			toServer.println(reply);
-    			toServer.flush();
-    	}
-       catch (IOException e) {
-        e.printStackTrace();
-}
-}
 }
