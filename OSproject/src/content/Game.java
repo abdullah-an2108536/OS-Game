@@ -2,9 +2,11 @@ package content;
 
 import java.util.*;
 
-public class Game {
+public class Game
+{
     private int id;
     private String gameName;
+    private String originalGameName;
 
     private List<Player> playingPlayers;
     private List<Player> waitingPlayers;
@@ -21,6 +23,12 @@ public class Game {
     public int getId() {return id;}
 
     public String getGameName() {return gameName;}
+    public void setGameName(String gameName) {this.gameName = gameName;}
+    
+    public String getOriginalGameName() {return this.originalGameName;}
+    public void setOriginalGameName(String originalGameName) {this.originalGameName = originalGameName;}
+    
+    public boolean getGameInProgress() {return this.gameInProgress;}
 
     public List<Player> getPlayers() {return playingPlayers;}
 
@@ -28,6 +36,7 @@ public class Game {
     {
         this.id = id;
         this.gameName = gameName;
+        setOriginalGameName(this.gameName);
         this.leaderboard = leaderboard;
 
         this.playingPlayers = new ArrayList<>();
@@ -39,7 +48,12 @@ public class Game {
 
     public synchronized void addPlayer(Player player)
     {
-        if (gameInProgress || playingPlayers.size() >= MAX_PLAYERS) {waitingPlayers.add(player);}
+        if (gameInProgress || playingPlayers.size() >= MAX_PLAYERS)
+        {
+        	//waitingPlayers.add(player);
+        	player.sendMessage("Game in progress, cannot join.");
+        	player.handleGame();
+        }
         else
         {
             playingPlayers.add(player);
@@ -63,8 +77,10 @@ public class Game {
         try
         {
             System.out.println("\n\nStarting the game in " + START_DELAY_SECONDS + " seconds...");
+            sendAnnouncement(playingPlayers, "Starting the game in " + START_DELAY_SECONDS + " seconds...");
             Thread.sleep((START_DELAY_SECONDS-10) * 1000);
             System.out.println("Starting the game in 10 seconds...");
+            sendAnnouncement(playingPlayers, "Starting the game in 10 seconds...");
             Thread.sleep(10000);
         }
         catch (InterruptedException e) {e.printStackTrace();}
@@ -149,6 +165,13 @@ public class Game {
         	
             System.out.println("\nGetting guess from " + player.getNickname());
             int playerGuess = player.getPlayerGuess();
+            
+            while ( (playerGuess < 0) || (playerGuess > 100) )
+            {
+            	player.sendMessage("Invalid input, please try again.");
+            	playerGuess = player.getPlayerGuess();
+            }
+            
             playerGuesses.put(player, playerGuess);
         }
         
@@ -264,6 +287,7 @@ public class Game {
         
         sendAnnouncement(playingPlayers, roundOutput);
         sendAnnouncement(waitingPlayers, roundOutput);
+        setGameName(getOriginalGameName() + roundOutput.replace("\n", ",\t"));
 
 //        if (playingPlayers.size() == 1)
 //        {
@@ -284,6 +308,8 @@ public class Game {
             currentRound++;
             playRound();
         }
+        
+        //else {gameInProgress = !gameInProgress;}
     }
 
     private boolean canJoin = true;
@@ -295,28 +321,29 @@ public class Game {
     	{
             Player winnerPlayer = playingPlayers.get(0);
             leaderboard.incrementWins(winnerPlayer.getNickname(), winnerPlayer.getID());
-            String message = "\n\nGame over!\t" + winnerPlayer.getNickname() + " wins!";
+            String message = "\n\nGame over!\t" + winnerPlayer.getNickname() + " won!";
             System.out.println(message);
             
             sendAnnouncement(playingPlayers, message);
             sendAnnouncement(waitingPlayers, message);
+            setGameName(getOriginalGameName() + " : Game Over!\t" + winnerPlayer.getNickname() + " won!");
             
             // Remove all players from the game
             for (Player p : playingPlayers)
             {
             	p.sendMessage("The game has ended, goodbye!");
-            	p.terminateConnection();
+            	p.handleGame();
             }
-            playingPlayers.clear();
             
             for (Player p : waitingPlayers)
             {
             	p.sendMessage("The game has ended, goodbye!");
-            	p.terminateConnection();
+            	p.handleGame();
             }
+            playingPlayers.clear();
             waitingPlayers.clear();
             
-            gameInProgress = false;
+            gameInProgress = false; 
     	}
     }
     

@@ -110,7 +110,7 @@ public class Player extends Thread
         else {toUser.println("Invalid ticket");}
     }
 
-    private void handleGame()
+    public void handleGame()
     {
     	//toUser.println(leaderboard.toString());
     	
@@ -128,11 +128,11 @@ public class Player extends Thread
         try
         {
             input = fromUser.readLine();
-            if (input == null)
-            {
-                System.err.println("Client disconnected");
-                if (game != null) {game.removePlayer(this);}
-            }
+//            if (input == null)
+//            {
+//                System.err.println("Client disconnected");
+//                if (game != null) {game.removePlayer(this);}
+//            }
 
             if (input.equals("new")) {createNewGame();}
             else
@@ -169,39 +169,43 @@ public class Player extends Thread
     private void joinGame(int gameId)
     {
         Game targetGame = null;
-
-        // Find game in the ArrayList
-        for (Game game : server.games)
-        {
-            if (game.getId() == gameId)
-            {
-                targetGame = game;
-                break;
-            }
+        
+//        if (gameId == (-1)) {handleGame(); return;}
+//        else
+//        {
+	        // Find game in the ArrayList
+	        for (Game game : server.games)
+	        {
+	            if (game.getId() == gameId)
+	            {
+	                targetGame = game;
+	                break;
+	            }
+	        }
+	
+	        if (targetGame == null)
+	        {
+	            toUser.println("Game not found.");
+	            handleGame();
+	        }
+	
+	        // Make sure game is not full (Probably should move this code to the Game class)
+	        if ( (targetGame.getPlayers().size() >= 6) || (targetGame.getGameInProgress()))
+	        {
+	            toUser.println("\n\nGame is full, cannot join.\n\n");
+	            handleGame();
+	        }
+	
+	//      if (targetGame.gameInProgress) {
+	//          toUser.println("Game has already started, cannot join.");
+	//          return;
+	//      }
+	
+	//      toUser.println("You joined game " + gameId);
+	        game = targetGame;
+	//      }
         }
-
-        if (targetGame == null)
-        {
-            toUser.println("Game not found.");
-            return;
-        }
-
-        // Make sure game is not full (Probably should move this code to the Game class)
-        if (targetGame.getPlayers().size() >= 6)
-        {
-            toUser.println("Game is full, cannot join.");
-            return;
-        }
-
-//      if (targetGame.gameInProgress) {
-//          toUser.println("Game has already started, cannot join.");
-//          return;
-//      }
-
-//      toUser.println("You joined game " + gameId);
-        game = targetGame;
-//      }
-    }
+    //}
 
     // Increment or Decrement the Player Points based on Round Result
     public void updatePoints(int points)

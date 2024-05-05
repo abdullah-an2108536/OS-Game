@@ -9,13 +9,15 @@ public class Server
 {
 	
 	public ArrayList<Game> games = new ArrayList<>();
-	public ArrayList<Player> players = new ArrayList<>();
+	public static ArrayList<Player> players = new ArrayList<>();
 	public ArrayList<Ticket> tickets = new ArrayList<>();
 	
 	public Leaderboard leaderboard;
 
 	private PrintWriter toClient;
 	private BufferedReader fromClient;
+	
+	public static ArrayList<Player> getPlayers() {return players;}
 
 	public Server()
 	{
@@ -33,11 +35,17 @@ public class Server
 			
 
 			// Create default empty games
-			Game defaultGame = new Game(0, "Default Game", leaderboard);
-			Game defaultGame1 = new Game(1, "Test Game", leaderboard);
+			Game defaultGame0 = new Game(0, "Public Lobby 0", leaderboard);
+			Game defaultGame1 = new Game(1, "Public Lobby 1", leaderboard);
+			Game defaultGame2 = new Game(2, "Public Lobby 2", leaderboard);
+			Game defaultGame3 = new Game(3, "Public Lobby 3", leaderboard);
+			Game defaultGame4 = new Game(4, "Public Lobby 4", leaderboard);
 
-			games.add(defaultGame);
+			games.add(defaultGame0);
 			games.add(defaultGame1);
+			games.add(defaultGame2);
+			games.add(defaultGame3);
+			games.add(defaultGame4);
 
 			ServerSocket server = new ServerSocket(13337);
 			System.out.println("Server is up, waiting for Connections on port " + server.getLocalPort());
@@ -50,12 +58,12 @@ public class Server
 				Player player = new Player(client, this);
 				//player.sendMessage(leaderboard.toString2());
 				
-				try {
-					Thread.sleep(5000);
-				} catch (InterruptedException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
+//				try {
+//					Thread.sleep(5000);
+//				} catch (InterruptedException e) {
+//					// TODO Auto-generated catch block
+//					e.printStackTrace();
+//				}
 				
 				players.add(player);
 				player.start();

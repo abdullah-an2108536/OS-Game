@@ -4,6 +4,7 @@ package content;
 import java.io.*;
 import java.net.*;
 //import java.util.Scanner;
+import java.util.ArrayList;
 
 public class Client
 {
@@ -23,12 +24,13 @@ public class Client
             System.out.println("New Player [Enter 1]\nReturning Player [Enter 2]\nEnter: ");
 
             int userInput = Integer.parseInt(fromUser.readLine());
+            String nickname = "NEW PLAYER";
 
             if (userInput == 1)
             {
 
                 System.out.println("Please provide your nickname: ");
-                String nickname = fromUser.readLine();
+                nickname = fromUser.readLine();
                 toServer.println("nickname " + nickname);
                 System.out.println(fromServer.readLine());
 
@@ -38,6 +40,7 @@ public class Client
 
                 System.out.println("Please provide your ticket in the format: \"nickname id\": ");
                 String ticket = fromUser.readLine();
+                nickname = ticket.split(" ")[0];
                 toServer.println("ticket " + ticket);
 
                 String response = fromServer.readLine();
@@ -52,7 +55,7 @@ public class Client
             }
             else
             {
-                System.out.println("Invalid Input");
+                System.out.println("Invalid Input, please try to connect again.");
                 System.exit(0);
             }
 
@@ -68,7 +71,16 @@ public class Client
             }
 
             String gameInput = fromUser.readLine();
-
+            
+//            if (gameInput.startsWith("/say"))
+//            {
+//            	gameInput = gameInput.substring(5);
+//            	ArrayList<Player> players = Server.getPlayers();
+//            	
+//            	for (Player p : players) {p.sendMessage(nickname + ": " + gameInput);}
+//            	gameInput = fromUser.readLine();
+//            }
+            
             if (gameInput.equals("new"))
             {
                 toServer.println("new");
@@ -91,7 +103,8 @@ public class Client
                 System.out.println(message);
                 
                 // Check if the server is asking for user input
-                if (message.startsWith("Leaderboard:")) {
+                if (message.startsWith("Leaderboard:"))
+                {
                 	// Print the leaderboard
                     System.out.println(message);
                     
@@ -100,13 +113,34 @@ public class Client
                     {
                         System.out.println(message);
                     }
-                } else if (message.endsWith("Enter your guess (0-100):")) {
+                }
+                else if (message.endsWith("Enter your guess (0-100):"))
+                {
                     // Prompt for user input
                     toServer.println(fromUser.readLine());
                 }
+                else if (message.startsWith("Game is full, cannot join."))
+                {
+                	while ( !(message.startsWith("Enter the game ID you want to join")) )
+                    {
+                    	message = fromServer.readLine();
+                    	System.out.println(message);
+                    }
+                	
+                	gameInput = fromUser.readLine();
+                	
+                	if (gameInput.equals("new"))
+                    {
+                        toServer.println("new");
+
+                        System.out.println("Enter name of the New Game");
+                        toServer.println(fromUser.readLine());
+
+                        System.out.println(fromServer.readLine());
+                    }
+                    else {toServer.println(gameInput);}
+                }
             }
-
-
         }
         catch (IOException e) {System.out.println("IO related error: " + e);}
     }
