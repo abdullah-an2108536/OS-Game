@@ -222,6 +222,8 @@ public class Player extends Thread
     public int getID() {return ticket.getID();}
 
     public int getPoints() {return points;}
+    
+    public void setPoints(int points) {this.points = points;}
 
     public int getPlayerGuess()
     {

@@ -45,6 +45,7 @@ public class Client
                 {
                     System.out.println("Invalid Ticket (Terminating Client Class)");
                     System.exit(0);
+                    return;
                 }
                 System.out.println(response);
 
@@ -59,9 +60,12 @@ public class Client
             System.out.println(fromServer.readLine());
 
             // Player chooses a game to Join or creates a new Game
-            System.out.println(fromServer.readLine());
-            System.out.println(fromServer.readLine());
-            System.out.println(fromServer.readLine());
+            String message = "";
+            while ( !(message.startsWith("Enter the game ID you want to join")) )
+            {
+            	message = fromServer.readLine();
+            	System.out.println(message);
+            }
 
             String gameInput = fromUser.readLine();
 
@@ -78,7 +82,7 @@ public class Client
 
             while (true)
             {
-                String message = fromServer.readLine(); // receive round results or prompt for next action
+                message = fromServer.readLine(); // receive round results or prompt for next action
                 if (message == null || message.equals("Game over! No winners."))
                 {
                     System.out.println("Game has ended.");

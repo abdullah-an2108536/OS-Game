@@ -141,8 +141,12 @@ public class Game {
 
         Map<Player, Integer> playerGuesses = new HashMap<>();
         
+        // Check if at least every player except one has one point
+        int playersWithOnePoint = 0;
         for (Player player : playingPlayers)
         {
+        	if (player.getPoints() == 1) {playersWithOnePoint++;}
+        	
             System.out.println("\nGetting guess from " + player.getNickname());
             int playerGuess = player.getPlayerGuess();
             playerGuesses.put(player, playerGuess);
@@ -151,31 +155,53 @@ public class Game {
         Player winner=playingPlayers.get(0);
         int targetNumber=0;
         //if the number of remaining players are 2, each has 1 point only
-        if (playingPlayers.size() == 2 && playingPlayers.get(0).getPoints() == 1 && playingPlayers.get(1).getPoints() == 1) {
+        if (playersWithOnePoint >= playingPlayers.size() - 1)
+        {
         	
-        	int player0guess=playerGuesses.get(playingPlayers.get(0));
-        	int player1guess=playerGuesses.get(playingPlayers.get(1));
-        	targetNumber=player0guess+player1guess;
+        	int sum = 0;
+        	for (int guess : playerGuesses.values()) {sum += guess;}
+
+        	double average = (double) sum / playingPlayers.size();
+        	targetNumber = (int) (average * 0.6666);
+
         	
-            //if the first player selects 0
-            if (player0guess == 0) {
-                // If the first player's guess is 0, the second player wins
-            	Player player0=playingPlayers.get(0);
-            	player0.updatePoints(-1);
-            	playingPlayers.set(0, player0);
-                roundLosers.add(player0);
-                winner=playingPlayers.get(1);
-                roundWinners.add(winner);
-                
-            } else if (player1guess == 0) {
-                // If the second player's guess is 0, the first player wins
-            	Player player1=playingPlayers.get(1);
-            	player1.updatePoints(-1);
-            	playingPlayers.set(1, player1);
-                roundLosers.add(player1);
-                winner=playingPlayers.get(0);
-                roundWinners.add(winner);
-            }
+        	int closestDifference = Integer.MAX_VALUE;
+
+        	for (Map.Entry<Player, Integer> entry : playerGuesses.entrySet())
+        	{
+        		Player player = entry.getKey();
+        		int playerGuess = entry.getValue();
+        		
+        		if (playerGuess == 0)
+        		{
+        			player.sendMessage("You entered 0! How could you!");
+        			player.setPoints(1);
+        			roundLosers.add(player);
+        		}
+        		else
+        		{
+        			int difference = Math.abs(playerGuess - targetNumber);
+
+            		if (difference < closestDifference)
+            		{
+            			closestDifference = difference;
+            			winner = player;
+            		}
+        		}
+        	}
+
+        	for (Map.Entry<Player, Integer> entry : playerGuesses.entrySet())
+        	{
+        		Player player = entry.getKey();
+
+        		if (player == winner) {roundWinners.add(player);}
+        		else
+        		{
+        			player.updatePoints(-1);
+        			roundLosers.add(player);
+        			
+        		}
+        	}
         }
         
         else {
@@ -225,16 +251,16 @@ public class Game {
     	    {
     	        iterator.remove();
     	        waitingPlayers.add(p);
-    	        p.sendMessage("You are now a spectator [DO NOT INPUT]");
+    	        p.sendMessage("\n\nYou are now a spectator [DO NOT INPUT]\n\n");
     	    }
     	}
 
-        String roundOutput = "Round: " + currentRound + "\tTarget number was: " + targetNumber + ".\n";
+        String roundOutput = "\nRound: " + currentRound + "\tTarget number was: " + targetNumber + ".\n";
         roundOutput += "Winner: " + winner.getNickname() + "[" + winner.getPoints() + "].\nLosers: ";
 
         for (Player loser : roundLosers) {roundOutput += loser.getNickname() + "[" + loser.getPoints() + "], ";}
 
-        System.out.println(roundOutput);
+        System.out.println(roundOutput+"\n");
         
         sendAnnouncement(playingPlayers, roundOutput);
         sendAnnouncement(waitingPlayers, roundOutput);

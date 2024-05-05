@@ -100,21 +100,28 @@ public class Leaderboard implements Serializable {
         return sb.toString();
     }
     
-    public String toString2()
-    {
-        String s = "Leaderboard\t";
-        int count = 0; // Keep track of the number of entries added
-        for (Map.Entry<String, Integer> entry : leaderboard.entrySet())
-        {
-            if (count >= 5) {break;}
+    public String toString2() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("\n\nLeaderboard:\n\n");
+        sb.append(String.format("%-20s %-10s%n", "Player", "Wins"));
+        sb.append("--------------------------------------------------\n");
+        
+        int count = 0; // Counter to limit to first 5 entries
+        for (Map.Entry<String, Integer> entry : leaderboard.entrySet()) {
+            if (count >= 5) {
+                break; // Break the loop after printing the first 5 entries
+            }
             
             String player = entry.getKey();
             int wins = entry.getValue();
-            s += "[" + player + "-" + wins + "], ";
-            count++;
+            sb.append(String.format("%-20s %-10d%n", player, wins));
+            
+            count++; // Increment the counter
         }
-        return s;
+        
+        return sb.toString();
     }
+
 
 
 }
