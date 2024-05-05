@@ -3,6 +3,8 @@ package content;
 
 import java.io.*;
 import java.net.*;
+import java.util.Timer;
+import java.util.TimerTask;
 
 
 public class Player extends Thread
@@ -23,6 +25,11 @@ public class Player extends Thread
     private Game game;
     
     private int points = 5; // Initial points for each player
+    
+    private Timer pingTimer; //new change
+    private static final int PING_TIME= 6000; // //new change
+    
+    
 
     // Player Thread will have access to the Client and everything in the Server
     public Player(Socket clientSocket, Server server)
@@ -37,7 +44,11 @@ public class Player extends Thread
         {
             toUser = new PrintWriter( clientSocket.getOutputStream(), true );
             fromUser = new BufferedReader( new InputStreamReader(clientSocket.getInputStream()) );
+            
+            pingTimer = new Timer(); //new change
+            
             toUser.println(leaderboard.toString2());
+           
         }
         catch (Exception e) {e.printStackTrace();}
     }
@@ -66,11 +77,60 @@ public class Player extends Thread
 //          System.out.println("After calling game.addPlayer()");
 //          if (targetGame.getPlayers().size() >= 2) {
             game.startGame();
+            
+            
+            pingTimer.schedule(new PingTask(this), 6000, PING_TIME); //new change
+            Thread clientThread = new Thread(() -> handleClient(clientSocket,this)); //new change
+            clientThread.start(); //new change
 
         }
         catch (IOException e) {System.err.println("Error communicating with client: " + e.getMessage());}
     }
+    
+  //new change
+  	 private void handleClient(Socket client,Player player) {
+  	        // Implementation to handle client connections
+  		 try {
+  		        
+  		        String feed;
+  		        do {
+  		          feed = fromUser.readLine();
+  		          if (feed.equals("ping")) {
+  		        	System.out.println(player.getName()+" is still present !");
+  		            }
+  		        } while (feed != null);
+  		        player.terminateConnection();
+  		        if(game!=null) {
+  		        	game.removePlayer(player);
+  		        }
+  		        
+  		      } catch (IOException e) {
+  		        e.printStackTrace();
+  		      }
+  		    }
+  		 
+  	 
+  	//new change
+  	 private class PingTask extends TimerTask {
+  	        
+  	        private Player player;
+  	        
+  	      public PingTask(Player player) {
+				super();
+				this.player = player;
+			}
 
+		@Override
+  	        public void run() {
+  	            // Send "ping" messages to players in the waitingPlayers list
+  	 
+  	                player.sendMessage("Type ping if you are still there");
+  	            
+  	        }
+  	    }
+
+  	 
+  	 
     // Create new Ticket for the new client who provided a nickname
     private void handleNickname(String nicknameRequest)
     {
